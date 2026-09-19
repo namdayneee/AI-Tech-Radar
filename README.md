@@ -1,50 +1,105 @@
-# AI Tech Radar — Free MVP
+# AI Tech Radar
 
-Pipeline:
+AI Tech Radar là hệ thống cá nhân dùng để tự động thu thập, lọc và gửi các tin AI/công nghệ đáng chú ý mỗi ngày.
 
-RSS / Hacker News API
-→ Python
-→ Gemini phân loại + tóm tắt
-→ Supabase PostgreSQL
-→ GitHub Actions
-→ Telegram Daily Digest
+Hệ thống ưu tiên các chủ đề như:
 
-## Chạy local
+- AI, LLM, AI Agent, Coding Agent
+- OpenAI, Google, Hugging Face, Microsoft
+- Developer Tools
+- Web, Backend, Database
+- DevOps, Cloud
+- Hệ điều hành, Mạng máy tính, Distributed Systems
+- Cybersecurity
+- Nghiên cứu AI mới
 
-```bash
-python -m venv .venv
+## Kiến trúc hệ thống
+
+```text
+RSS / Hacker News / arXiv
+          │
+          ▼
+      collect.py
+          │
+          ▼
+        Gemini
+          │
+   ┌──────┼───────────┐
+   ▼      ▼           ▼
+Category  Score     Summary
+   │      │           │
+   └──────┴─────┬─────┘
+                ▼
+             Supabase
+                │
+       ┌────────┴────────┐
+       ▼                 ▼
+   digest.py         cleanup.py
+       │                 │
+       ▼                 ▼
+   Telegram        Xóa dữ liệu cũ
 ```
 
-Windows PowerShell:
+## Luồng hoạt động
 
-```powershell
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-Copy-Item .env.example .env
+Mỗi ngày hệ thống tự động chạy theo lịch bằng GitHub Actions.
+
+```text
+06:45
+Collect News
+   ↓
+RSS / API
+   ↓
+Gemini phân tích
+   ↓
+Lưu Supabase
+
+07:30
+Supabase
+   ↓
+Lọc tin quan trọng
+   ↓
+Telegram
 ```
 
-Điền `.env`, sau đó:
+Mỗi bài được gửi thành một tin nhắn Telegram riêng, gồm:
 
-```powershell
-python scripts/test_connections.py
-python collect.py
-python digest.py
+```text
+Mức độ quan trọng
+Tiêu đề
+Chủ đề
+Nguồn
+Điểm
+Tóm tắt
+Vì sao đáng chú ý
+Link bài gốc
 ```
 
-## GitHub Secrets cần tạo
+## Data Lifecycle
 
-- `SUPABASE_URL`
-- `SUPABASE_SECRET_KEY`
-- `GEMINI_API_KEY`
-- `TELEGRAM_BOT_TOKEN`
-- `TELEGRAM_CHAT_ID`
+Database không lưu dữ liệu vô hạn.
 
-## Lịch
+```text
+score < 7       → giữ 30 ngày
+score 7–8.9     → giữ 90 ngày
+score >= 9      → giữ 365 ngày
+saved = true    → giữ lại
+```
 
-- Collector: phút 17, mỗi 4 giờ, timezone `Asia/Ho_Chi_Minh`
-- Daily Digest: 07:30 mỗi ngày, timezone `Asia/Ho_Chi_Minh`
+Cleanup chạy tự động mỗi tuần.
 
-## Bảo mật
+## Công nghệ sử dụng
 
-Không commit `.env`.
-Không đưa service-role key hoặc bot token vào frontend/public repo.
+```text
+Python
+Gemini API
+Supabase PostgreSQL
+Telegram Bot API
+GitHub Actions
+RSS
+Hacker News API
+```
+
+## Mục tiêu
+
+AI Tech Radar giúp biến một lượng lớn tin công nghệ thành một feed ngắn gọn, có chọn lọc và dễ theo dõi mỗi ngày.
