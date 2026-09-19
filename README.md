@@ -16,19 +16,19 @@ Hệ thống ưu tiên các chủ đề như:
 ## Kiến trúc hệ thống
 
 ```text
-RSS / Hacker News / arXiv
-          │
-          ▼
-      collect.py
-          │
-          ▼
-        Gemini
-          │
-   ┌──────┼───────────┐
-   ▼      ▼           ▼
-Category  Score     Summary
-   │      │           │
-   └──────┴─────┬─────┘
+      RSS / Hacker News / arXiv
+                │
+                ▼
+            collect.py
+                │
+                ▼
+              Gemini
+                │
+      ┌─────────┼───────────┐
+      ▼         ▼           ▼
+   Category   Score     Summary
+      │         │           │
+      └─────────┼───────────┘
                 ▼
              Supabase
                 │
