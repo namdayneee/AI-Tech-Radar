@@ -1,109 +1,222 @@
 # AI Tech Radar
 
-AI Tech Radar là một hệ thống cá nhân dùng để tự động thu thập, phân tích và gửi các tin tức AI và công nghệ đáng chú ý mỗi ngày.
+AI Tech Radar là hệ thống cá nhân dùng để tự động theo dõi các tin tức và công nghệ mới trong lĩnh vực AI, lập trình và phần mềm.
 
-## Mục tiêu
+Mục tiêu của dự án là giúp người dùng không phải tự mở nhiều website mỗi ngày mà vẫn có thể biết được những nội dung đáng chú ý như:
 
-Hệ thống giúp người dùng:
+- Model AI mới
+- Công cụ hỗ trợ lập trình mới
+- Repository GitHub mới
+- Release mới của framework, thư viện và công nghệ
+- Package mới
+- Tin tức AI và công nghệ quan trọng
 
-- Theo dõi các tin AI và công nghệ mới.
-- Giảm thời gian phải tự tìm kiếm thông tin từ nhiều nguồn.
-- Tự động lọc những bài có mức độ liên quan và quan trọng cao.
-- Nhận bản tin ngắn gọn qua Telegram.
+Hệ thống tự động thu thập dữ liệu, dùng Gemini để phân tích và chấm điểm, lưu vào Supabase và gửi các nội dung đáng chú ý qua Telegram.
 
-## Cách hoạt động
+---
+
+## V1 — News Radar
+
+Phiên bản đầu tiên tập trung vào việc theo dõi các bài báo và tin tức công nghệ.
+
+Luồng hoạt động:
 
 ```text
-Nguồn tin
-   ↓
-RSS / API
-   ↓
-Python Collector
-   ↓
-Gemini phân tích
-   ↓
-Supabase lưu dữ liệu
-   ↓
-Telegram gửi bản tin
+RSS / Hacker News
+        ↓
+     collect.py
+        ↓
+      Gemini
+        ↓
+     Supabase
+        ↓
+     Telegram
 ```
 
-Hệ thống lấy dữ liệu từ các nguồn như:
+Các bài viết được AI:
 
-- OpenAI
-- Google AI
-- Hugging Face
-- Microsoft Research
-- arXiv
-- Hacker News
+- Phân loại chủ đề
+- Chấm điểm mức độ quan trọng
+- Tóm tắt nội dung
+- Giải thích vì sao đáng chú ý
 
-Gemini được dùng để:
+Dữ liệu được lưu trong bảng:
 
-- Phân loại chủ đề.
-- Chấm điểm mức độ quan trọng.
-- Tóm tắt nội dung.
-- Giải thích vì sao bài viết đáng chú ý.
+```text
+articles
+```
 
-## Kiến trúc
+V1 giúp tự động hóa việc đọc tin, nhưng vẫn chủ yếu phụ thuộc vào các bài báo.
+
+---
+
+## V2 — Technology Radar
+
+V2 mở rộng hệ thống từ một News Radar thành một Technology Radar.
+
+Ngoài bài báo, hệ thống có thể theo dõi trực tiếp:
+
+```text
+AI_MODEL
+DEV_TOOL
+GITHUB_REPO
+RELEASE
+LANGUAGE
+FRAMEWORK
+PACKAGE
+```
+
+Các nguồn chính gồm:
+
+```text
+GitHub
+Hugging Face
+PyPI
+RSS
+Hacker News
+arXiv
+```
+
+Luồng V2:
+
+```text
+GitHub / Hugging Face / PyPI / RSS / HN
+                    ↓
+                 Collector
+                    ↓
+                Pre-filter
+                    ↓
+                  Gemini
+                    ↓
+              radar_items
+                    ↓
+                 Telegram
+```
+
+Mỗi công nghệ được đánh giá theo nhiều tiêu chí như:
+
+```text
+Relevance
+Novelty
+Quality
+Momentum
+Importance
+```
+
+Sau đó hệ thống tính `final_score` để quyết định nội dung nào đáng lưu và đáng gửi.
+
+---
+
+## Kiến trúc hiện tại
 
 ```text
 Cloudflare Cron
-      ↓
+       ↓
+Cloudflare Worker
+       ↓
 GitHub Actions
-      ↓
-collect.py
-      ↓
+       ↓
+Python Collectors
+       ↓
 Gemini
-      ↓
+       ↓
 Supabase
-      ↓
-digest.py
-      ↓
+       ↓
 Telegram
 ```
 
-Cloudflare chịu trách nhiệm kích hoạt hệ thống theo lịch.
+Cloudflare chịu trách nhiệm chạy hệ thống theo lịch.
 
-GitHub Actions chạy các tác vụ thu thập, gửi bản tin và dọn dữ liệu.
+GitHub Actions chạy các script thu thập, gửi bản tin và dọn dữ liệu.
 
-Supabase lưu các bài viết đã được phân tích.
+Supabase lưu dữ liệu.
 
-Telegram là nơi người dùng nhận các tin quan trọng.
+Telegram là nơi nhận các tin quan trọng.
 
-## Quản lý dữ liệu
+---
 
-Hệ thống có cơ chế tự động xóa dữ liệu cũ để tránh database tăng vô hạn.
+## Database
+
+Hệ thống hiện dùng hai bảng chính:
 
 ```text
-score < 7       → giữ 30 ngày
-score 7–8.9     → giữ 90 ngày
-score >= 9      → giữ 365 ngày
-saved = true    → giữ lại
+articles
 ```
 
-Các bài đã gửi Telegram được đánh dấu bằng `sent_at` để tránh gửi trùng.
+Lưu các bài báo và tin tức của V1.
+
+```text
+radar_items
+```
+
+Lưu các công nghệ của V2 như model, tool, repo, release và package.
+
+Ngoài ra có:
+
+```text
+radar_metrics
+```
+
+để lưu các chỉ số như stars, downloads hoặc likes phục vụ việc theo dõi xu hướng sau này.
+
+---
 
 ## Công nghệ sử dụng
 
-- Python
-- Gemini API
-- Supabase PostgreSQL
-- Telegram Bot API
-- GitHub Actions
-- Cloudflare Workers
-- RSS
-- Hacker News API
-
-## Kết quả
-
-AI Tech Radar có thể tự động:
-
 ```text
-Thu thập tin
-→ Phân tích
-→ Lưu dữ liệu
-→ Lọc tin quan trọng
-→ Gửi Telegram
-→ Dọn dữ liệu cũ
+Python
+Gemini API
+Supabase
+Telegram Bot
+GitHub Actions
+Cloudflare Workers
+GitHub API
+Hugging Face
+PyPI
+RSS
+Hacker News
 ```
 
-Hệ thống hoạt động tự động trên cloud và không cần bật máy tính cá nhân liên tục.
+---
+
+## Quá trình phát triển
+
+```text
+V1
+
+News
+↓
+Gemini
+↓
+Supabase
+↓
+Telegram
+```
+
+được nâng cấp thành:
+
+```text
+V2
+
+News
++
+AI Models
++
+Developer Tools
++
+GitHub Repositories
++
+Releases
++
+Packages
+        ↓
+      Gemini
+        ↓
+ Technology Radar
+        ↓
+     Supabase
+        ↓
+     Telegram
+```
+
+Mục tiêu cuối cùng của AI Tech Radar là trở thành một hệ thống theo dõi công nghệ cá nhân, giúp phát hiện sớm những công nghệ mới có thể hữu ích cho việc học tập, lập trình và xây dựng dự án.
