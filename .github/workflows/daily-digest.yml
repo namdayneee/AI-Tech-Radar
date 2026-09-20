@@ -18,11 +18,9 @@ jobs:
 
   digest:
 
-    name: Send Daily AI Tech Digest
-
     runs-on: ubuntu-24.04
 
-    timeout-minutes: 10
+    timeout-minutes: 15
 
 
     steps:
@@ -46,7 +44,33 @@ jobs:
           pip install -r requirements.txt
 
 
-      - name: Send Daily Digest
+      # ======================================================
+      # TECHNOLOGY RADAR
+      # ======================================================
+
+      - name: Send Technology Radar
+        env:
+
+          SUPABASE_URL:
+            ${{ secrets.SUPABASE_URL }}
+
+          SUPABASE_SECRET_KEY:
+            ${{ secrets.SUPABASE_SECRET_KEY }}
+
+          TELEGRAM_BOT_TOKEN:
+            ${{ secrets.TELEGRAM_BOT_TOKEN }}
+
+          TELEGRAM_CHAT_ID:
+            ${{ secrets.TELEGRAM_CHAT_ID }}
+
+        run: python radar_digest.py
+
+
+      # ======================================================
+      # NEWS
+      # ======================================================
+
+      - name: Send News Digest
         env:
 
           SUPABASE_URL:

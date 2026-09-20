@@ -1,4 +1,4 @@
-name: Cleanup Old AI Tech Articles
+name: Cleanup AI Tech Radar
 
 
 on:
@@ -18,11 +18,9 @@ jobs:
 
   cleanup:
 
-    name: Cleanup Old Articles
-
     runs-on: ubuntu-24.04
 
-    timeout-minutes: 10
+    timeout-minutes: 15
 
 
     steps:
@@ -46,7 +44,11 @@ jobs:
           pip install -r requirements.txt
 
 
-      - name: Cleanup database
+      # ======================================================
+      # NEWS CLEANUP
+      # ======================================================
+
+      - name: Cleanup News
         env:
 
           SUPABASE_URL:
@@ -65,3 +67,28 @@ jobs:
             "365"
 
         run: python cleanup.py
+
+
+      # ======================================================
+      # RADAR CLEANUP
+      # ======================================================
+
+      - name: Cleanup Technology Radar
+        env:
+
+          SUPABASE_URL:
+            ${{ secrets.SUPABASE_URL }}
+
+          SUPABASE_SECRET_KEY:
+            ${{ secrets.SUPABASE_SECRET_KEY }}
+
+          RADAR_RETENTION_LOW_DAYS:
+            "30"
+
+          RADAR_RETENTION_MEDIUM_DAYS:
+            "90"
+
+          RADAR_RETENTION_HIGH_DAYS:
+            "365"
+
+        run: python radar_cleanup.py

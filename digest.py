@@ -16,7 +16,7 @@ from src.telegram_sender import (
 
 MIN_SCORE = 5.5
 
-MAX_ARTICLES = 10
+MAX_ARTICLES = 3
 
 SEND_DELAY_SECONDS = 1
 

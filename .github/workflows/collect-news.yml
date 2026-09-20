@@ -18,11 +18,9 @@ jobs:
 
   collect:
 
-    name: Collect AI Tech News
-
     runs-on: ubuntu-24.04
 
-    timeout-minutes: 15
+    timeout-minutes: 20
 
 
     steps:
@@ -46,7 +44,11 @@ jobs:
           pip install -r requirements.txt
 
 
-      - name: Collect AI Tech News
+      # ======================================================
+      # V1 NEWS
+      # ======================================================
+
+      - name: Collect News
         env:
 
           SUPABASE_URL:
@@ -62,3 +64,25 @@ jobs:
             gemini-3.5-flash-lite
 
         run: python collect.py
+
+
+      # ======================================================
+      # V2 TECHNOLOGY RADAR
+      # ======================================================
+
+      - name: Collect Technology Radar
+        env:
+
+          SUPABASE_URL:
+            ${{ secrets.SUPABASE_URL }}
+
+          SUPABASE_SECRET_KEY:
+            ${{ secrets.SUPABASE_SECRET_KEY }}
+
+          GEMINI_API_KEY:
+            ${{ secrets.GEMINI_API_KEY }}
+
+          GEMINI_MODEL:
+            gemini-3.5-flash-lite
+
+        run: python radar_collect.py
