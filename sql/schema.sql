@@ -1,13 +1,5 @@
--- ============================================================
--- AI TECH RADAR DATABASE SCHEMA
--- ============================================================
-
 create extension if not exists pgcrypto;
 
-
--- ============================================================
--- ARTICLES
--- ============================================================
 
 create table if not exists public.articles (
 
@@ -47,11 +39,14 @@ create table if not exists public.articles (
         not null
         default now(),
 
-    -- Bài được người dùng đánh dấu giữ lại.
-    -- Cleanup sẽ KHÔNG xóa.
     saved boolean
         not null
-        default false
+        default false,
+
+    -- NULL = chưa gửi Telegram
+    -- timestamp = đã gửi thành công
+    sent_at timestamptz
+        null
 );
 
 
@@ -77,7 +72,6 @@ on public.articles (
 );
 
 
--- Hỗ trợ cleanup.
 create index if not exists idx_articles_cleanup
 on public.articles (
     fetched_at,
@@ -86,12 +80,19 @@ on public.articles (
 where saved = false;
 
 
--- Hỗ trợ Saved Articles.
 create index if not exists idx_articles_saved_true
 on public.articles (
     saved
 )
 where saved = true;
+
+
+create index if not exists idx_articles_unsent
+on public.articles (
+    importance_score desc,
+    fetched_at desc
+)
+where sent_at is null;
 
 
 -- ============================================================
@@ -102,7 +103,6 @@ alter table public.articles
 enable row level security;
 
 
--- Backend sử dụng Supabase Secret Key.
 grant all
 on table public.articles
 to service_role;

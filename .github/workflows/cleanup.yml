@@ -2,21 +2,13 @@ name: Cleanup Old AI Tech Articles
 
 
 on:
-
-  # Cho phép chạy thủ công.
   workflow_dispatch:
-
-  # Chủ nhật hằng tuần lúc 03:00.
-  schedule:
-    - cron: "0 3 * * 0"
-      timezone: "Asia/Ho_Chi_Minh"
 
 
 permissions:
   contents: read
 
 
-# Không cho hai cleanup chạy đồng thời.
 concurrency:
   group: ai-tech-radar-cleanup
   cancel-in-progress: false
@@ -35,19 +27,11 @@ jobs:
 
     steps:
 
-      # ======================================================
-      # Checkout
-      # ======================================================
-
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
           persist-credentials: false
 
-
-      # ======================================================
-      # Python
-      # ======================================================
 
       - name: Setup Python
         uses: actions/setup-python@v7
@@ -56,32 +40,28 @@ jobs:
           cache: "pip"
 
 
-      # ======================================================
-      # Dependencies
-      # ======================================================
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
 
-      # ======================================================
-      # Cleanup
-      # ======================================================
-
       - name: Cleanup database
         env:
 
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_URL:
+            ${{ secrets.SUPABASE_URL }}
 
-          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          SUPABASE_SECRET_KEY:
+            ${{ secrets.SUPABASE_SECRET_KEY }}
 
-          # Retention policy
-          RETENTION_LOW_DAYS: "30"
+          RETENTION_LOW_DAYS:
+            "30"
 
-          RETENTION_MEDIUM_DAYS: "90"
+          RETENTION_MEDIUM_DAYS:
+            "90"
 
-          RETENTION_HIGH_DAYS: "365"
+          RETENTION_HIGH_DAYS:
+            "365"
 
         run: python cleanup.py

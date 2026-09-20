@@ -1,65 +1,64 @@
 name: Send Daily AI Tech Digest
 
+
 on:
-  # Cho phép chạy thủ công
   workflow_dispatch:
 
-  # Gửi digest mỗi ngày lúc 07:30
-  schedule:
-    - cron: "30 7 * * *"
-      timezone: "Asia/Ho_Chi_Minh"
 
 permissions:
   contents: read
 
-# Tránh gửi hai Daily Digest cùng lúc
+
 concurrency:
   group: ai-tech-radar-daily-digest
   cancel-in-progress: false
 
+
 jobs:
+
   digest:
+
     name: Send Daily AI Tech Digest
 
     runs-on: ubuntu-24.04
 
     timeout-minutes: 10
 
+
     steps:
-      # ======================================================
-      # 1. Checkout
-      # ======================================================
+
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
           persist-credentials: false
 
-      # ======================================================
-      # 2. Setup Python
-      # ======================================================
+
       - name: Setup Python
         uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: "pip"
 
-      # ======================================================
-      # 3. Install dependencies
-      # ======================================================
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # ======================================================
-      # 4. Send Telegram Digest
-      # ======================================================
+
       - name: Send Daily Digest
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
 
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SUPABASE_URL:
+            ${{ secrets.SUPABASE_URL }}
+
+          SUPABASE_SECRET_KEY:
+            ${{ secrets.SUPABASE_SECRET_KEY }}
+
+          TELEGRAM_BOT_TOKEN:
+            ${{ secrets.TELEGRAM_BOT_TOKEN }}
+
+          TELEGRAM_CHAT_ID:
+            ${{ secrets.TELEGRAM_CHAT_ID }}
 
         run: python digest.py

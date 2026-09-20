@@ -1,0 +1,15 @@
+{
+    "name": "ai-tech-radar-scheduler",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+  
+    "scripts": {
+      "dev": "wrangler dev --test-scheduled",
+      "deploy": "wrangler deploy"
+    },
+  
+    "devDependencies": {
+      "wrangler": "^4.0.0"
+    }
+  }

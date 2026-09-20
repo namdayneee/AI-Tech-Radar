@@ -1,8 +1,13 @@
 import time
-from datetime import datetime, timedelta, timezone
 
-from src.database import get_recent_articles
-from src.telegram_sender import send_telegram
+from src.database import (
+    get_unsent_articles,
+    mark_article_sent,
+)
+
+from src.telegram_sender import (
+    send_telegram,
+)
 
 
 # ============================================================
@@ -11,10 +16,8 @@ from src.telegram_sender import send_telegram
 
 MIN_SCORE = 5.5
 
-# Tối đa số bài gửi mỗi ngày.
 MAX_ARTICLES = 10
 
-# Nghỉ giữa các message Telegram để tránh gửi quá dồn.
 SEND_DELAY_SECONDS = 1
 
 
@@ -23,21 +26,28 @@ SEND_DELAY_SECONDS = 1
 # ============================================================
 
 CATEGORY_ICONS = {
+
     "AI": "🤖",
+
     "Research": "🔬",
+
     "Developer Tools": "🛠",
+
     "Programming": "💻",
+
     "Infrastructure": "☁️",
+
     "Systems": "⚙️",
+
     "Security": "🔐",
+
     "Other": "📰",
 }
 
 
-def get_category_icon(category: str) -> str:
-    """
-    Trả icon tương ứng với category.
-    """
+def get_category_icon(
+    category: str,
+) -> str:
 
     return CATEGORY_ICONS.get(
         category,
@@ -46,37 +56,36 @@ def get_category_icon(category: str) -> str:
 
 
 # ============================================================
-# IMPORTANCE LEVEL
+# IMPORTANCE
 # ============================================================
 
-def get_importance_label(score: float) -> str:
-    """
-    Chuyển importance_score thành mức độ dễ nhìn trên Telegram.
-    """
+def get_importance_label(
+    score: float,
+) -> str:
 
-    if score >= 9.0:
+    if score >= 9:
+
         return "🔥 MUST KNOW"
 
-    if score >= 8.0:
+    if score >= 8:
+
         return "🚨 VERY IMPORTANT"
 
-    if score >= 7.0:
+    if score >= 7:
+
         return "⭐ IMPORTANT"
 
     return "📰 WORTH READING"
 
 
 # ============================================================
-# BUILD MESSAGE
+# MESSAGE
 # ============================================================
 
 def build_article_message(
     article: dict,
     index: int,
 ) -> str:
-    """
-    Mỗi article được biến thành đúng 1 Telegram message.
-    """
 
     title = (
         article.get("title")
@@ -94,7 +103,9 @@ def build_article_message(
     )
 
     score = float(
-        article.get("importance_score")
+        article.get(
+            "importance_score"
+        )
         or 0
     )
 
@@ -103,8 +114,10 @@ def build_article_message(
         or "Chưa có tóm tắt."
     )
 
-    why_it_matters = (
-        article.get("why_it_matters")
+    why = (
+        article.get(
+            "why_it_matters"
+        )
         or "Chưa có phân tích."
     )
 
@@ -113,18 +126,22 @@ def build_article_message(
         or ""
     )
 
-    category_icon = get_category_icon(
-        category
+    level = (
+        get_importance_label(
+            score
+        )
     )
 
-    importance_label = get_importance_label(
-        score
+    icon = (
+        get_category_icon(
+            category
+        )
     )
 
-    message = f"""
-{importance_label}
+    return f"""
+{level}
 
-{category_icon} {index}. {title}
+{icon} {index}. {title}
 
 🏷 Chủ đề: {category}
 🏢 Nguồn: {source}
@@ -136,14 +153,12 @@ def build_article_message(
 
 💡 VÌ SAO ĐÁNG CHÚ Ý?
 
-{why_it_matters}
+{why}
 
 🔗 ĐỌC BÀI GỐC
 
 {url}
 """.strip()
-
-    return message
 
 
 # ============================================================
@@ -157,158 +172,124 @@ def main():
     )
 
     # ========================================================
-    # 1. Lấy các article hệ thống phát hiện trong 24h gần nhất
+    # 1. Chỉ lấy bài CHƯA gửi
     # ========================================================
 
-    since = (
-        datetime.now(timezone.utc)
-        - timedelta(hours=24)
-    ).isoformat()
-
-    articles = get_recent_articles(
-        since_iso=since,
-        limit=50,
+    selected = (
+        get_unsent_articles(
+            min_score=MIN_SCORE,
+            limit=MAX_ARTICLES,
+        )
     )
 
     print(
         f"[INFO] Found "
-        f"{len(articles)} articles "
-        f"in the last 24 hours."
+        f"{len(selected)} "
+        f"unsent articles."
     )
 
-    # ========================================================
-    # 2. Lọc theo importance_score
-    # ========================================================
-
-    selected = []
-
-    for article in articles:
-
-        score = float(
-            article.get(
-                "importance_score"
-            )
-            or 0
-        )
-
-        if score >= MIN_SCORE:
-            selected.append(article)
 
     # ========================================================
-    # 3. Sắp xếp quan trọng nhất lên đầu
-    # ========================================================
-
-    selected.sort(
-        key=lambda article: float(
-            article.get(
-                "importance_score"
-            )
-            or 0
-        ),
-        reverse=True,
-    )
-
-    # ========================================================
-    # 4. Giới hạn số bài
-    # ========================================================
-
-    selected = selected[
-        :MAX_ARTICLES
-    ]
-
-    print(
-        f"[INFO] Selected "
-        f"{len(selected)} articles "
-        f"with score >= {MIN_SCORE}."
-    )
-
-    # ========================================================
-    # 5. Không có tin
+    # 2. Không có bài mới
     # ========================================================
 
     if not selected:
 
-        message = (
+        send_telegram(
             "🤖 AI TECH RADAR\n\n"
-            "24 giờ qua chưa có tin mới "
-            f"vượt ngưỡng {MIN_SCORE}/10."
+            "Hôm nay chưa có tin mới "
+            "đáng chú ý chưa được gửi."
         )
 
-        send_telegram(message)
-
         print(
-            "[DONE] No important articles."
+            "[DONE] No new articles."
         )
 
         return
 
+
     # ========================================================
-    # 6. Gửi header
+    # 3. Header
     # ========================================================
 
-    header = f"""
-🤖 AI TECH RADAR
-
-📅 Bản tin 24 giờ gần nhất
-
-📊 {len(selected)} tin đáng chú ý
-
-🔥 >= 9.0  MUST KNOW
-🚨 >= 8.0  VERY IMPORTANT
-⭐ >= 7.0  IMPORTANT
-📰 >= 5.5  WORTH READING
-""".strip()
-
-    send_telegram(header)
+    send_telegram(
+        "🤖 AI TECH RADAR\n\n"
+        f"📊 {len(selected)} "
+        "tin mới đáng chú ý"
+    )
 
     time.sleep(1)
 
+
     # ========================================================
-    # 7. Mỗi article = 1 Telegram message
+    # 4. Gửi từng article
     # ========================================================
+
+    sent_count = 0
 
     for index, article in enumerate(
         selected,
         start=1,
     ):
 
-        message = build_article_message(
-            article,
-            index,
-        )
-
         try:
 
-            send_telegram(message)
+            message = (
+                build_article_message(
+                    article,
+                    index,
+                )
+            )
+
+            # -----------------------------------------------
+            # Gửi Telegram trước
+            # -----------------------------------------------
+
+            send_telegram(
+                message
+            )
+
+
+            # -----------------------------------------------
+            # Chỉ khi gửi thành công mới đánh dấu sent_at
+            # -----------------------------------------------
+
+            mark_article_sent(
+                article["id"]
+            )
+
+
+            sent_count += 1
 
             print(
                 f"[SEND] "
                 f"{index}/{len(selected)} "
-                f"| "
-                f"{article.get('importance_score')} "
-                f"| "
-                f"{article.get('title')}"
+                f"| {article.get('title')}"
             )
+
 
         except Exception as exc:
 
+            # Nếu lỗi:
+            # sent_at vẫn NULL
+            # → lần sau retry.
+
             print(
-                f"[ERROR] Failed to send "
-                f"article {index}: {exc}"
+                "[ERROR] "
+                f"{article.get('title')} "
+                f"| {exc}"
             )
+
 
         time.sleep(
             SEND_DELAY_SECONDS
         )
 
-    # ========================================================
-    # 8. Done
-    # ========================================================
 
     print(
-        f"[DONE] Sent "
-        f"{len(selected)} "
-        f"articles to Telegram."
+        "[DONE] Successfully sent "
+        f"{sent_count}/"
+        f"{len(selected)} articles."
     )
 
 
